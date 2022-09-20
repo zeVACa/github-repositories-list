@@ -1,5 +1,6 @@
-let input = document.querySelector('.input');
-let suggestionsList = document.querySelector('ul.suggestions');
+let input = document.querySelector('.search-repositories__input');
+let suggestionsList = document.querySelector('ul.suggestions-list');
+let repositoriesList = document.querySelector('ul.repositories-list');
 
 let debouncedGetRepositories = debounce(getRepositories, 500);
 
@@ -12,18 +13,7 @@ async function getRepositories(inputSearchQuery = '') {
   );
   const data = await response.json();
 
-  console.log(data);
-
-  suggestionsList.innerHTML = '';
-
-  console.log(data.items.slice(0, REPOSITORIES_PER_PAGE));
-  data.items.slice(0, 5).forEach((item) => {
-    console.log(item);
-    let li = document.createElement('li');
-
-    li.textContent = item.name;
-    suggestionsList.appendChild(li);
-  });
+  renderSuggestions(data.items.slice(0, REPOSITORIES_PER_PAGE));
 }
 
 function debounce(fn, debounceTime) {
@@ -31,7 +21,62 @@ function debounce(fn, debounceTime) {
   return function () {
     clearTimeout(timer);
     timer = setTimeout(() => fn.apply(this, arguments), debounceTime);
-    console.log(timer);
-    console.log('timer');
   };
+}
+
+function renderSuggestions(repositoriesDataList) {
+  console.log('repositoriesDataList', repositoriesDataList);
+
+  suggestionsList.innerHTML = '';
+
+  if (repositoriesDataList.length === 0) {
+    suggestionsList.innerHTML = '<li>По вашему запросу не было ничего найдено</li >';
+    return;
+  }
+  repositoriesDataList.forEach((item) => {
+    console.log(item);
+    let li = document.createElement('li');
+
+    li.textContent = item.name;
+    li.setAttribute('data-id', item.id);
+
+    li.addEventListener('click', (e) => {
+      console.log(e.currentTarget);
+      suggestionsList.innerHTML = '';
+      input.value = '';
+
+      appendRepositoryToList(item.name, item.owner.login, item.stargazers_count);
+    });
+
+    li.classList.add('suggestions-list__item');
+
+    suggestionsList.appendChild(li);
+  });
+}
+
+repositoriesList.addEventListener('click', (e) => {
+  if (e.target.tagName === 'BUTTON') {
+    console.log('button');
+    e.target.closest('li').remove();
+  }
+});
+
+function appendRepositoryToList(name, owner, stars) {
+  console.log('data', name, owner, stars);
+
+  const li = document.createElement('li');
+  const div = document.createElement('div');
+  const deleteButton = document.createElement('button');
+
+  div.innerHTML = `<p class="repositories-list__paragraph">${name}</p><p class="repositories-list__paragraph">${owner}</p><p class="repositories-list__paragraph">${stars}</p>`;
+  deleteButton.textContent = '×';
+
+  deleteButton.classList.add('repositories-list__delete-button');
+
+  li.appendChild(div);
+  li.appendChild(deleteButton);
+
+  li.classList.add('repositories-list__item');
+
+  repositoriesList.appendChild(li);
 }
