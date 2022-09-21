@@ -1,10 +1,17 @@
-let input = document.querySelector('.search-repositories__input');
-let suggestionsList = document.querySelector('ul.suggestions-list');
-let repositoriesList = document.querySelector('ul.repositories-list');
+const input = document.querySelector('.search-repositories__input');
+const suggestionsList = document.querySelector('ul.suggestions-list');
+const repositoriesList = document.querySelector('ul.repositories-list');
 
-let debouncedGetRepositories = debounce(getRepositories, 500);
+const debouncedGetRepositories = debounce(getRepositories, 500);
 
-input.addEventListener('input', () => debouncedGetRepositories(input.value));
+input.addEventListener('input', (e) => {
+  if (e.currentTarget.value === '') {
+    suggestionsList.innerHTML = '';
+    return;
+  }
+
+  debouncedGetRepositories(e.currentTarget.value);
+});
 
 async function getRepositories(inputSearchQuery = '') {
   const REPOSITORIES_PER_PAGE = 5;
@@ -25,8 +32,6 @@ function debounce(fn, debounceTime) {
 }
 
 function renderSuggestions(repositoriesDataList) {
-  console.log('repositoriesDataList', repositoriesDataList);
-
   suggestionsList.innerHTML = '';
 
   if (repositoriesDataList.length === 0) {
@@ -34,14 +39,12 @@ function renderSuggestions(repositoriesDataList) {
     return;
   }
   repositoriesDataList.forEach((item) => {
-    console.log(item);
     let li = document.createElement('li');
 
     li.textContent = item.name;
     li.setAttribute('data-id', item.id);
 
     li.addEventListener('click', (e) => {
-      console.log(e.currentTarget);
       suggestionsList.innerHTML = '';
       input.value = '';
 
@@ -56,14 +59,11 @@ function renderSuggestions(repositoriesDataList) {
 
 repositoriesList.addEventListener('click', (e) => {
   if (e.target.tagName === 'BUTTON') {
-    console.log('button');
     e.target.closest('li').remove();
   }
 });
 
 function appendRepositoryToList(name, owner, stars) {
-  console.log('data', name, owner, stars);
-
   const li = document.createElement('li');
   const div = document.createElement('div');
   const deleteButton = document.createElement('button');
