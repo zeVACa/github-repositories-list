@@ -4,23 +4,20 @@ const repositoriesList = document.querySelector('ul.repositories-list');
 
 const debouncedGetRepositories = debounce(getRepositories, 500);
 
-input.addEventListener('input', (e) => {
-  if (e.currentTarget.value === '') {
-    suggestionsList.innerHTML = '';
-    return;
-  }
-
-  debouncedGetRepositories(e.currentTarget.value);
-});
+input.addEventListener('input', (e) => debouncedGetRepositories(e.currentTarget.value));
 
 async function getRepositories(inputSearchQuery = '') {
-  const REPOSITORIES_PER_PAGE = 5;
   const response = await fetch(
-    `https://api.github.com/search/repositories?q=${inputSearchQuery}&page=1&per_page=${REPOSITORIES_PER_PAGE}`,
+    `https://api.github.com/search/repositories?q=${inputSearchQuery}&page=1&per_page=5`,
   );
   const data = await response.json();
 
-  renderSuggestions(data.items.slice(0, REPOSITORIES_PER_PAGE));
+  if (data?.message === 'Validation Failed') {
+    clearSuggestionList();
+    return;
+  }
+
+  renderSuggestions(data.items);
 }
 
 function debounce(fn, debounceTime) {
@@ -32,20 +29,26 @@ function debounce(fn, debounceTime) {
 }
 
 function renderSuggestions(repositoriesDataList) {
-  suggestionsList.innerHTML = '';
+  clearSuggestionList();
 
   if (repositoriesDataList.length === 0) {
-    suggestionsList.innerHTML = '<li>По вашему запросу не было ничего найдено</li >';
+    const li = document.createElement('li');
+
+    li.textContent = 'По вашему запросу не было ничего найдено';
+
+    suggestionsList.appendChild(li);
+
     return;
   }
+
   repositoriesDataList.forEach((item) => {
-    let li = document.createElement('li');
+    const li = document.createElement('li');
 
     li.textContent = item.name;
     li.setAttribute('data-id', item.id);
 
     li.addEventListener('click', (e) => {
-      suggestionsList.innerHTML = '';
+      clearSuggestionList();
       input.value = '';
 
       appendRepositoryToList(item.name, item.owner.login, item.stargazers_count);
@@ -68,9 +71,16 @@ function appendRepositoryToList(name, owner, stars) {
   const div = document.createElement('div');
   const deleteButton = document.createElement('button');
 
-  div.innerHTML = `<p class="repositories-list__paragraph">${name}</p><p class="repositories-list__paragraph">${owner}</p><p class="repositories-list__paragraph">${stars}</p>`;
-  deleteButton.textContent = '×';
+  for (let i = 0; i < arguments.length; i++) {
+    const paragraph = document.createElement('p');
 
+    paragraph.textContent = arguments[i];
+    paragraph.classList.add('repositories-list__paragraph');
+
+    div.appendChild(paragraph);
+  }
+
+  deleteButton.textContent = '×';
   deleteButton.classList.add('repositories-list__delete-button');
 
   li.appendChild(div);
@@ -79,4 +89,10 @@ function appendRepositoryToList(name, owner, stars) {
   li.classList.add('repositories-list__item');
 
   repositoriesList.appendChild(li);
+}
+
+function clearSuggestionList() {
+  while (suggestionsList.firstChild) {
+    suggestionsList.firstChild.remove();
+  }
 }
